@@ -347,6 +347,7 @@ namespace IdentitySample.Models
         public async Task<SignInStatus> PasswordSignIn(string userName, string password, bool isPersistent, bool shouldLockout)
         {
             var user = await UserManager.FindByNameAsync(userName);
+            var mailConfig = (MailConfig)ConfigurationManager.GetSection("application/mail");
             if (user == null)
             {
                 return SignInStatus.Failure;
@@ -355,9 +356,12 @@ namespace IdentitySample.Models
             {
                 return SignInStatus.LockedOut;
             }
-            if (!await UserManager.IsEmailConfirmedAsync(user.Id))
+            if (mailConfig.RequireValid)
             {
-                return SignInStatus.InvalidEmail;
+                if (!await UserManager.IsEmailConfirmedAsync(user.Id))
+                {
+                    return SignInStatus.InvalidEmail;
+                }
             }
             if (await UserManager.CheckPasswordAsync(user, password))
             {
